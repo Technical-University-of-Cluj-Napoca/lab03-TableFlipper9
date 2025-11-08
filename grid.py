@@ -63,7 +63,7 @@ class Grid:
                 spot.draw(self.win)   # draw each spot
 
         self.draw_grid_lines()        # draw the grid lines          
-        pygame.display.update()       # update the display
+        #pygame.display.update()       # update the display
 
     def get_clicked_pos(self, pos: tuple[int, int]) -> tuple[int, int]:
         """
