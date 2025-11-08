@@ -160,6 +160,8 @@ def astar(draw: callable, grid: Grid, start: Spot, end: Spot) -> bool:
             return True
         
         for neighbor in current.neighbors:
+            if neighbor.is_barrier():
+                continue
             tentative_g = g_score[current] + 1 
             if tentative_g < g_score[neighbor]:
                 came_from[neighbor] = current
@@ -182,3 +184,51 @@ def astar(draw: callable, grid: Grid, start: Spot, end: Spot) -> bool:
 # ▢ Iterative Deepening Search/Iterative Deepening Depth-First Search (IDS/IDDFS)
 # ▢ Iterative Deepening A* (IDA)
 # Assume that each edge (graph weight) equalss
+
+def dls(draw: callable, grid: Grid, start: Spot, end: Spot) -> bool:
+    pass
+
+def ucs(draw: callable, grid: Grid, start: Spot, end: Spot) -> bool:
+    if start is None or end is None:
+        return False
+    
+    open_heap = PriorityQueue()
+    open_heap.put((0,start))
+    came_from = {}
+    cost = {}
+
+    for row in grid.grid:
+        for col in row:
+            cost[col] = 9999
+
+    cost[start] = 0
+    visited = {start}
+
+    while not open_heap.empty():
+        current_cost, current = open_heap.get()
+
+        if current.get_position() == end.get_position():
+            while current in came_from:
+                current = came_from[current]
+                current.make_path()
+                draw()
+            end.make_end()
+            start.make_start()
+            return True
+        
+        for neighbor in current.neighbors:
+            if neighbor.is_barrier():
+                continue
+            new_cost = cost[current] + 1
+            if new_cost < cost[neighbor]:
+                cost[neighbor] = new_cost
+                came_from[neighbor] = current
+                if neighbor not in visited:
+                    open_heap.put((new_cost, neighbor))
+                    visited.add(neighbor)
+                    neighbor.make_open()
+        
+        draw()
+        if current != start:
+            current.make_closed()
+    return False
