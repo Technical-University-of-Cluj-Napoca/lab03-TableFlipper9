@@ -232,3 +232,40 @@ def ucs(draw: callable, grid: Grid, start: Spot, end: Spot) -> bool:
         if current != start:
             current.make_closed()
     return False
+
+def greedy(draw: callable, grid: Grid, start: Spot, end: Spot) -> bool:
+    if start is None or end is None:
+        return False
+    
+    heuristic = h_euclidian_distance
+    open_heap = PriorityQueue()
+    open_heap.put((heuristic(start.get_position(), end.get_position()), start))
+    came_from = {}
+    visited = {start}
+
+    while not open_heap.empty():
+        draw()
+        urrent_cost, current = open_heap.get()
+
+        if current == end:
+            while current in came_from:
+                current = came_from[current]
+                current.make_path()
+                draw()
+            end.make_end()
+            start.make_start()
+            return True
+
+        for neighbor in current.neighbors:
+            if neighbor not in visited and not neighbor.is_barrier():
+                visited.add(neighbor)
+                came_from[neighbor] = current
+                h_val = heuristic(neighbor.get_position(), end.get_position())
+                open_heap.put((h_val, neighbor))
+                neighbor.make_open()
+
+        draw()
+        if current != start:
+            current.make_closed()
+
+    return False
