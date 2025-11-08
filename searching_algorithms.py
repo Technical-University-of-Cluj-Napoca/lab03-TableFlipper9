@@ -3,6 +3,7 @@ from collections import deque
 from queue import PriorityQueue
 from grid import Grid
 from spot import Spot
+import math
 
 def bfs(draw: callable, grid: Grid, start: Spot, end: Spot) -> bool:
     """
@@ -15,7 +16,37 @@ def bfs(draw: callable, grid: Grid, start: Spot, end: Spot) -> bool:
     Returns:
         bool: True if a path is found, False otherwise.
     """
-    pass
+    if start == None or end == None:
+        return False
+
+    queue = deque()
+    queue.append(start)
+    visited = {start}
+    came_from = {}
+
+    while queue.count != 0:
+        current = queue.popleft()
+
+        if current == end:
+            while current in came_from:
+                current = came_from[current]
+                current.make_path()
+                draw()
+            end.make_end()
+            start.make_start()
+            return True
+        
+        for neighbor in current.neighbors:
+            if neighbor not in visited  and not neighbor.is_barrier():
+                visited.add(neighbor)
+                came_from[neighbor] = current
+                queue.append(neighbor)
+                neighbor.make_open()
+
+        draw()
+        if current != start:
+            current.make_closed()
+    return False
 
 def dfs(draw: callable, grid: Grid, start: Spot, end: Spot) -> bool:
     """
@@ -28,7 +59,35 @@ def dfs(draw: callable, grid: Grid, start: Spot, end: Spot) -> bool:
     Returns:
         bool: True if a path is found, False otherwise.
     """
-    pass
+    if start == None or end == None:
+        return False
+
+    stack = [start]
+    visited = {start}
+    came_from = {}
+
+    while stack.count != 0:
+        current = stack.pop()
+        if current == end:
+            while current in came_from:
+                current = came_from[current]
+                current.make_path()
+                draw()
+            end.make_end()
+            start.make_start()
+            return True
+        
+        for neighbor in current.neighbors:
+            if neighbor not in visited  and not neighbor.is_barrier():
+                visited.add(neighbor)
+                came_from[neighbor] = current
+                stack.append(neighbor)
+                neighbor.make_open()
+
+        draw()
+        if current != start:
+            current.make_closed()
+    return False
 
 def h_manhattan_distance(p1: tuple[int, int], p2: tuple[int, int]) -> float:
     """
@@ -39,7 +98,9 @@ def h_manhattan_distance(p1: tuple[int, int], p2: tuple[int, int]) -> float:
     Returns:
         float: The Manhattan distance between p1 and p2.
     """
-    pass
+    x1, y1 = p1
+    x2, y2 = p2
+    return abs(x1 - x2) + abs(y1 - y2)
 
 def h_euclidian_distance(p1: tuple[int, int], p2: tuple[int, int]) -> float:
     """
@@ -50,7 +111,9 @@ def h_euclidian_distance(p1: tuple[int, int], p2: tuple[int, int]) -> float:
     Returns:
         float: The Manhattan distance between p1 and p2.
     """
-    pass
+    x1, y1 = p1
+    x2, y2 = p2
+    return math.sqrt((x1 - x2)**2 + (y1 - y2)**2)
 
 
 def astar(draw: callable, grid: Grid, start: Spot, end: Spot) -> bool:
@@ -64,7 +127,53 @@ def astar(draw: callable, grid: Grid, start: Spot, end: Spot) -> bool:
     Returns:
         bool: True if a path is found, False otherwise.
     """
-    pass
+    if start == None or end == None:
+        return False
+    
+    count = 0
+    open_heap = PriorityQueue()
+    open_heap.put((0,count,start))
+    came_from = {}
+    g_score = {}
+    f_score = {}
+
+    for row in grid.grid:
+        for col in row:
+            g_score[col] = 9999
+            f_score[col] = 9999
+
+    g_score[start] = 0
+    f_score[start] = h_euclidian_distance(start.get_position(), end.get_position())
+    lookup_set ={start}
+
+    while not open_heap.empty():
+        current = open_heap.get()[2]
+        lookup_set.remove(current)
+
+        if current == end:
+            while current in came_from:
+                current = came_from[current]
+                current.make_path()
+                draw()
+            end.make_end()
+            start.make_start()
+            return True
+        
+        for neighbor in current.neighbors:
+            tentative_g = g_score[current] + 1 
+            if tentative_g < g_score[neighbor]:
+                came_from[neighbor] = current
+                g_score[neighbor] = tentative_g
+                f_score[neighbor] = tentative_g + h_euclidian_distance(neighbor.get_position(), end.get_position())
+                if neighbor not in lookup_set:
+                    count += 1
+                    open_heap.put((f_score[neighbor],count,neighbor))
+                    lookup_set.add(neighbor)
+                    neighbor.make_open()
+        draw()
+        if current != start:
+            current.make_closed()
+    return False
 
 # and the others algorithms...
 # ▢ Depth-Limited Search (DLS)
