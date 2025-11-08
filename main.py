@@ -26,20 +26,25 @@ if __name__ == "__main__":
         ("A*", astar),
         ("UCS", ucs),
         ("Greedy", greedy),
-        ("DLS", dls)]
+        ("DLS", dls),
+        ("IDDFS", ids),
+        ("IDA", ida_star)]
     algo_index = 0
 
     pygame.font.init()
     font = pygame.font.SysFont("consolas",24)
     def draw_label():
         algo_name = algotithms[algo_index][0]
-        text_surface = font.render(f"Algorithm : {algo_name}",True,(255,0,0))
+        text_surface = font.render(f"Algorithm : {algo_name}",True,(0,0,255))
         WIN.blit(text_surface, (WIDTH - text_surface.get_width() -20,20))
 
-    while run:
+    def draw():
         grid.draw()  # draw the grid and its spots
         draw_label()
         pygame.display.update()
+
+    while run:
+        draw()
 
         for event in pygame.event.get():
             # verify what events happened
@@ -86,7 +91,7 @@ if __name__ == "__main__":
                             spot.update_neighbors(grid.grid)
                     started = True
                     current_algo = algotithms[algo_index][1]
-                    current_algo(lambda: grid.draw(), grid, start, end)
+                    current_algo(draw, grid, start, end)
                     # ... and the others?
                     started = False
 

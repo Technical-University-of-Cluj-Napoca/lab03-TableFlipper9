@@ -66,7 +66,7 @@ def dfs(draw: callable, grid: Grid, start: Spot, end: Spot) -> bool:
     visited = {start}
     came_from = {}
 
-    while stack.count != 0:
+    while len(stack) != 0:
         current = stack.pop()
         if current == end:
             while current in came_from:
@@ -186,7 +186,40 @@ def astar(draw: callable, grid: Grid, start: Spot, end: Spot) -> bool:
 # Assume that each edge (graph weight) equalss
 
 def dls(draw: callable, grid: Grid, start: Spot, end: Spot) -> bool:
-    pass
+    if start == None or end == None:
+        return False
+
+    limit = 10
+    depth = {}
+    depth[start] = 0
+    stack = [start]
+    visited = {start}
+    came_from = {}
+
+    while len(stack):
+        current = stack.pop()
+        if current == end:
+            while current in came_from:
+                current = came_from[current]
+                current.make_path()
+                draw()
+            end.make_end()
+            start.make_start()
+            return True
+        
+        if depth[current] < limit:
+            for neighbor in current.neighbors:
+                if neighbor not in visited  and not neighbor.is_barrier():
+                    visited.add(neighbor)
+                    came_from[neighbor] = current
+                    depth[neighbor] = depth[current] + 1
+                    stack.append(neighbor)
+                    neighbor.make_open()
+
+        draw()
+        if current != start:
+            current.make_closed()
+    return False
 
 def ucs(draw: callable, grid: Grid, start: Spot, end: Spot) -> bool:
     if start is None or end is None:
@@ -269,3 +302,110 @@ def greedy(draw: callable, grid: Grid, start: Spot, end: Spot) -> bool:
             current.make_closed()
 
     return False
+
+def ids(draw: callable, grid: Grid, start: Spot, end: Spot):
+    
+    def dls_helper(draw: callable, grid: Grid, start: Spot, end: Spot, limit: int) -> bool:
+        if start == None or end == None:
+            return False
+
+        depth = {}
+        depth[start] = 0
+        stack = [start]
+        visited = {start}
+        came_from = {}
+
+        while len(stack):
+            current = stack.pop()
+            if current == end:
+                while current in came_from:
+                    current = came_from[current]
+                    current.make_path()
+                    draw()
+                end.make_end()
+                start.make_start()
+                return True
+            
+            if depth[current] < limit:
+                for neighbor in current.neighbors:
+                    if neighbor not in visited  and not neighbor.is_barrier():
+                        visited.add(neighbor)
+                        came_from[neighbor] = current
+                        depth[neighbor] = depth[current] + 1
+                        stack.append(neighbor)
+                        neighbor.make_open()
+
+            draw()
+            if current != start:
+                current.make_closed()
+        return False
+    
+    max_depth = 20
+    for depth in range(max_depth):
+        if dls_helper(draw, grid, start, end, depth):
+            return True
+    return False
+
+def ida_star(draw: callable, grid: Grid, start: Spot, end: Spot) -> bool:
+
+    heuristic = h_manhattan_distance
+
+    if start is None or end is None:
+            return False
+
+    def dfs_with_bound(bound: float) -> tuple[dict | None, float]:
+        stack = [(start, 0)] 
+        came_from = {}
+        visited = {start}
+        next_bound = math.inf
+
+        while stack:
+            draw()
+            current, g = stack.pop()
+
+            f = g + heuristic(current.get_position(), end.get_position())
+            if f > bound:
+                next_bound = min(next_bound, f)
+                continue
+
+            if current == end:
+                return came_from, 0
+
+            if current != start:
+                current.make_closed()
+
+            for neighbor in current.neighbors:
+                if not neighbor.is_barrier() and neighbor not in visited:
+                    visited.add(neighbor)
+                    came_from[neighbor] = current
+                    neighbor.make_open()
+                    stack.append((neighbor, g + 1))
+                    draw()
+
+        return None, next_bound
+
+    bound = heuristic(start.get_position(), end.get_position())
+
+    while True:
+        for row in grid.grid:
+            for cell in row:
+                if cell.is_closed() or cell.is_open():
+                    cell.reset()
+
+        came_from, next_bound = dfs_with_bound(bound)
+        draw()
+
+        if came_from is not None:
+            current = end
+            while current.get_position() != start.get_position():
+                current = came_from[current]
+                current.make_path()
+                draw()
+            end.make_end()
+            start.make_start()
+            return True
+
+        if next_bound == math.inf:
+            return False
+
+        bound = next_bound
